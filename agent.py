@@ -17,7 +17,7 @@ try:
     GEMINI_AVAILABLE = True
 except ImportError:
     GEMINI_AVAILABLE = False
-    print("⚠️ google.generativeai not installed - AI features disabled")
+    print("âš ï¸ google.generativeai not installed - AI features disabled")
 
 # Data Models
 class CabinClass(str, Enum):
@@ -156,7 +156,7 @@ class GeminiFlightAgent:
     def _init_gemini(self):
         """Initialize Gemini AI model"""
         if not GEMINI_AVAILABLE:
-            print("⚠️ Gemini AI not available - package not installed")
+            print("âš ï¸ Gemini AI not available - package not installed")
             return
             
         try:
@@ -164,11 +164,11 @@ class GeminiFlightAgent:
             if api_key and api_key != "your_gemini_api_key_here":
                 genai.configure(api_key=api_key)
                 self.gemini_model = genai.GenerativeModel('gemini-1.5-flash')
-                print("✅ Gemini AI initialized successfully")
+                print("âœ… Gemini AI initialized successfully")
             else:
-                print("⚠️ Gemini API key not configured")
+                print("âš ï¸ Gemini API key not configured")
         except Exception as e:
-            print(f"❌ Gemini initialization failed: {e}")
+            print(f"âŒ Gemini initialization failed: {e}")
     
     def is_gemini_available(self) -> bool:
         """Check if Gemini AI is available"""
@@ -181,7 +181,7 @@ class GeminiFlightAgent:
                 AFFILIATE_CONFIG[partner].update(config)
                 if config.get('affiliate_id') and config['affiliate_id'] != f"YOUR_{partner.upper()}_AFFILIATE_ID":
                     AFFILIATE_CONFIG[partner]['enabled'] = True
-                    print(f"✅ Enabled {partner} with affiliate ID: {config['affiliate_id']}")
+                    print(f"âœ… Enabled {partner} with affiliate ID: {config['affiliate_id']}")
     
     def load_airports(self):
         """Load airports from JSON database"""
@@ -189,13 +189,13 @@ class GeminiFlightAgent:
             if os.path.exists("airports.json"):
                 with open("airports.json", "r", encoding="utf-8") as f:
                     airports = json.load(f)
-                print(f"✅ Loaded {len(airports)} airports from database")
+                print(f"âœ… Loaded {len(airports)} airports from database")
                 return airports
             else:
-                print("⚠️ airports.json not found")
+                print("âš ï¸ airports.json not found")
                 return {}
         except Exception as e:
-            print(f"❌ Error loading airports: {e}")
+            print(f"âŒ Error loading airports: {e}")
             return {}
     
     def autocomplete_airports(self, query: str) -> List[Dict[str, str]]:
@@ -402,7 +402,7 @@ class GeminiFlightAgent:
                 url = url[:-1]
             return url
         except Exception as e:
-            print(f"❌ Error building URL for {partner}: {e}")
+            print(f"âŒ Error building URL for {partner}: {e}")
             return None
 
     def get_preview_urls(self, request: FlightRequest) -> Dict[str, str]:
@@ -520,14 +520,14 @@ class GeminiFlightAgent:
             if json_match:
                 json_str = json_match.group()
                 analysis = json.loads(json_str)
-                print(f"🤖 Gemini analysis complete: {analysis.get('route_type', 'analyzed')} route")
+                print(f"ðŸ¤– Gemini analysis complete: {analysis.get('route_type', 'analyzed')} route")
                 return analysis
             else:
-                print("⚠️ Could not parse Gemini JSON response")
+                print("âš ï¸ Could not parse Gemini JSON response")
                 return self._get_fallback_analysis(request)
                 
         except Exception as e:
-            print(f"❌ Gemini analysis failed: {e}")
+            print(f"âŒ Gemini analysis failed: {e}")
             return self._get_fallback_analysis(request)
     
     def _get_fallback_analysis(self, request: FlightRequest) -> Dict[str, Any]:
@@ -545,13 +545,13 @@ class GeminiFlightAgent:
     
     async def search_flights(self, request: FlightRequest) -> SearchResult:
         """Enhanced search with AI optimization"""
-        print(f"🤖 AI-Enhanced search: {request.origin} → {request.destination}")
+        print(f"ðŸ¤– AI-Enhanced search: {request.origin} â†’ {request.destination}")
         start_time = datetime.now()
         
         try:
             # Step 1: Get AI analysis of the route
             analysis = await self.analyze_route_with_gemini(request)
-            print(f"📊 Route analysis: {analysis.get('route_type')} route")
+            print(f"ðŸ“Š Route analysis: {analysis.get('route_type')} route")
             
             # Step 2: Get optimized partner search order
             optimized_partners = analysis.get("recommended_partners", ["priceline", "booking", "kayak"])
@@ -597,7 +597,7 @@ class GeminiFlightAgent:
             )
             
         except Exception as e:
-            print(f"❌ AI search failed: {e}")
+            print(f"âŒ AI search failed: {e}")
             return await self._fallback_search(request)
     
     async def _simulate_affiliate_search(self, request: FlightRequest, analysis: Dict, partners: List[str]) -> List[FlightResult]:
@@ -641,13 +641,13 @@ class GeminiFlightAgent:
                            savings: float, analysis: Dict) -> str:
         """Generate enhanced message with AI insights"""
         if best_affiliate and savings > 0:
-            base_message = f"🎉 AI found savings! Save ${savings:.0f} ({(savings/google_result.price)*100:.1f}%) with {best_affiliate.source}"
+            base_message = f"ðŸŽ‰ AI found savings! Save ${savings:.0f} ({(savings/google_result.price)*100:.1f}%) with {best_affiliate.source}"
         else:
-            base_message = f"📊 Google Flights shows competitive pricing at ${google_result.price:.0f}"
+            base_message = f"ðŸ“Š Google Flights shows competitive pricing at ${google_result.price:.0f}"
         
         booking_advice = analysis.get("booking_advice", "")
         if booking_advice and booking_advice != "Standard booking recommendations apply":
-            base_message += f"\n🧠 AI Advice: {booking_advice}"
+            base_message += f"\nðŸ§  AI Advice: {booking_advice}"
         
         return base_message
     
@@ -670,7 +670,7 @@ class GeminiFlightAgent:
             google_flights=google_result,
             best_affiliate=None,
             savings=0,
-            message="✈️ Standard search completed",
+            message="âœˆï¸ Standard search completed",
             search_time=search_time
         )
     
