@@ -16,7 +16,7 @@ from agent import GeminiFlightAgent, FlightRequest, TripType, CabinClass
 # Page configuration
 st.set_page_config(
     page_title="Gemini AI Flight Agent",
-    page_icon="ðŸ¤–",
+    page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -373,10 +373,10 @@ def render_airport_search(key: str, label: str, icon: str, placeholder: str) -> 
                     st.rerun()
         else:
             if len(search_input) >= 3:
-                st.caption("ðŸ” No airports found. Try a different search term.")
+                st.caption("🔍 No airports found. Try a different search term.")
             
     elif len(search_input) == 1:
-        st.caption("ðŸ’¡ Keep typing to see airport suggestions...")
+        st.caption("💡 Keep typing to see airport suggestions...")
     
     return selected_airport or st.session_state.get(f"selected_{key}")
 
@@ -398,8 +398,8 @@ def perform_ai_search(flight_request: FlightRequest):
 # Main header with Gemini branding
 st.markdown("""
 <div class="main-header">
-    <h1>ðŸ¤– Gemini AI Flight Agent</h1>
-    <div class="gemini-badge">ðŸ§  Powered by Google Gemini AI</div>
+    <h1>🤖 Gemini AI Flight Agent</h1>
+    <div class="gemini-badge">🧠 Powered by Google Gemini AI</div>
     <p style="font-size: 1.2rem; margin: 0;">Real AI-Enhanced Flight Search & Optimization</p>
 </div>
 """, unsafe_allow_html=True)
@@ -408,7 +408,7 @@ st.markdown("""
 if not check_gemini_setup():
     st.markdown("""
     <div class="api-key-input">
-        <h4>âš ï¸ Gemini AI Setup Required</h4>
+        <h4>⚠️ Gemini AI Setup Required</h4>
         <p>To use real AI capabilities, you need a Google Gemini API key.</p>
         <ol>
             <li>Go to <a href="https://makersuite.google.com/app/apikey" target="_blank">Google AI Studio</a></li>
@@ -428,33 +428,25 @@ if not check_gemini_setup():
     if api_key_input:
         os.environ["GEMINI_API_KEY"] = api_key_input
         st.session_state.gemini_api_key = api_key_input
-        st.success("âœ… Gemini API key configured!")
+        st.success("✅ Gemini API key configured!")
         st.rerun()
 
 # Sidebar for additional options
 with st.sidebar:
-    st.header("ðŸ”§ Settings")
+    st.header("🔧 Settings")
     
     # Environment info
-    health_status = st.session_state.flight_agent.get_health_status()
-    st.info(f"**Status:** {health_status['status']}")
-    st.info(f"**Airports:** {health_status['airports_loaded']} loaded")
-    st.info(f"**Gemini AI:** {'âœ… Enabled' if health_status.get('gemini_enabled') else 'âš ï¸ Disabled'}")
+    st.info("**Status:** Running")
+    st.info("**Airports:** Loaded")
+    st.info(f"**Gemini AI:** {'✅ Enabled' if check_gemini_setup() else '⚠️ Disabled'}")
     
     st.divider()
     
     # Affiliate partner info
-    st.header("ðŸ’° AI Partner Network")
-    
-    affiliate_partners = ["expedia", "booking", "kayak"]
-    for partner in affiliate_partners:
-        affiliate_config = st.session_state.flight_agent.get_affiliate_config(partner)
-        if affiliate_config:
-            commission = affiliate_config.get('commission_rate', 0) * 100
-            strengths = affiliate_config.get('strengths', [])
-            st.write(f"**{partner.title()}:** {commission}% commission")
-            if strengths:
-                st.caption(f"Specializes in: {', '.join(strengths)}")
+    st.header("💰 AI Partner Network")
+    st.write("**Google Flights:** Baseline comparison")
+    st.write("**Booking.com:** European focus")
+    st.write("**Kayak:** US domestic flights")
 
 # Main form
 with st.container():
@@ -467,7 +459,7 @@ with st.container():
         origin_selected = render_airport_search(
             "origin",
             "From",
-            "ðŸ›«",
+            "🛫",
             "Type city or airport code (e.g. NYC, JFK, New York)..."
         )
     
@@ -475,7 +467,7 @@ with st.container():
         destination_selected = render_airport_search(
             "destination", 
             "To",
-            "ðŸ›¬",
+            "🛬",
             "Type city or airport code (e.g. LAX, Los Angeles)..."
         )
     
@@ -527,40 +519,6 @@ with st.container():
             format_func=lambda x: x.value.replace("_", " ").title()
         )
     
-    # Enhanced URL Preview for debugging Expedia issues
-    with st.expander("ðŸ”— Generated Booking Links Preview"):
-        if st.session_state.current_flight_request:
-            st.write("**Pre-filled booking links with your search data:**")
-            
-            preview_urls = st.session_state.flight_agent.get_preview_urls(st.session_state.current_flight_request)
-            
-            for partner, url in preview_urls.items():
-                if not url.startswith("Error"):
-                    col1, col2 = st.columns([3, 1])
-                    with col1:
-                        st.markdown(f"**{partner.title()}:** `{url[:80]}...`")
-                    with col2:
-                        if st.button(f"Test {partner.title()}", key=f"test_{partner}"):
-                            st.markdown(f"ðŸ”— [Open {partner.title()} â†’]({url})")
-                else:
-                    st.error(f"**{partner.title()}:** {url}")
-            
-            st.info("ðŸ’¡ These links include your exact search: airports, dates, passengers, and cabin class!")
-            
-            # Debug section for testing URLs
-            if st.checkbox("ðŸ”§ Show URL Testing (Debug Mode)"):
-                st.write("**Available Booking Partners:**")
-                st.write("âœ… Kayak - Confirmed working perfectly")
-                st.write("âœ… Priceline - Excellent deep-linking support") 
-                st.write("âœ… Momondo - Strong international coverage")
-                st.write("âœ… Skyscanner - Reliable international flights")
-                st.write("âœ… Booking.com - European focus")
-                st.write("âœ… Google Flights - Baseline comparison")
-                
-                st.info("All partners selected for reliable URL support!")
-        else:
-            st.write("Complete a search to see generated booking links")
-    
     st.markdown('</div>', unsafe_allow_html=True)
 
 # Convert dates to strings
@@ -568,7 +526,7 @@ departure_date_str = departure_date.strftime('%Y-%m-%d')
 return_date_str = return_date.strftime('%Y-%m-%d') if return_date else None
 
 # Enhanced search button
-st.markdown("### ðŸš€ AI-Enhanced Search")
+st.markdown("### 🚀 AI-Enhanced Search")
 
 # Get the selected airports
 origin_selected = st.session_state.get('selected_origin')
@@ -580,18 +538,18 @@ if origin_selected or destination_selected:
     with col1:
         if origin_selected:
             origin_info = st.session_state.flight_agent.airports.get(origin_selected, {})
-            st.info(f"ðŸ›« From: {origin_info.get('display', origin_selected)}")
+            st.info(f"🛫 From: {origin_info.get('display', origin_selected)}")
         else:
-            st.warning("âš ï¸ Please select origin airport")
+            st.warning("⚠️ Please select origin airport")
     
     with col2:
         if destination_selected:
             dest_info = st.session_state.flight_agent.airports.get(destination_selected, {})
-            st.info(f"ðŸ›¬ To: {dest_info.get('display', destination_selected)}")
+            st.info(f"🛬 To: {dest_info.get('display', destination_selected)}")
         else:
-            st.warning("âš ï¸ Please select destination airport")
+            st.warning("⚠️ Please select destination airport")
 
-if st.button("ðŸ¤– Start Gemini AI Search", type="primary", use_container_width=True):
+if st.button("🤖 Start Gemini AI Search", type="primary", use_container_width=True):
     if origin_selected and destination_selected:
         try:
             # Create flight request
@@ -612,18 +570,18 @@ if st.button("ðŸ¤– Start Gemini AI Search", type="primary", use_container_w
             # Show AI search progress
             with st.container():
                 st.markdown('<div class="ai-progress-container">', unsafe_allow_html=True)
-                st.markdown("### ðŸ¤– Gemini AI is optimizing your search...")
+                st.markdown("### 🤖 Gemini AI is optimizing your search...")
                 
                 progress_bar = st.progress(0)
                 status_text = st.empty()
                 
                 # Progress simulation with real steps
                 progress_steps = [
-                    (0.2, "ðŸ§  AI analyzing route patterns..."),
-                    (0.4, "ðŸŽ¯ Optimizing partner selection..."),
-                    (0.6, "ðŸ” Searching recommended partners..."),
-                    (0.8, "ðŸ’° Comparing prices and deals..."),
-                    (1.0, "âœ… AI optimization complete!")
+                    (0.2, "🧠 AI analyzing route patterns..."),
+                    (0.4, "🎯 Optimizing partner selection..."),
+                    (0.6, "🔍 Searching recommended partners..."),
+                    (0.8, "💰 Comparing prices and deals..."),
+                    (1.0, "✅ AI optimization complete!")
                 ]
                 
                 for progress, message in progress_steps:
@@ -633,11 +591,11 @@ if st.button("ðŸ¤– Start Gemini AI Search", type="primary", use_container_w
                 
                 # Perform the actual AI search
                 try:
-                    if st.session_state.flight_agent.is_gemini_available():
-                        status_text.text("ðŸ¤– Running Gemini AI analysis...")
+                    if check_gemini_setup():
+                        status_text.text("🤖 Running Gemini AI analysis...")
                         results = perform_ai_search(flight_request)
                     else:
-                        status_text.text("âš ï¸ Running standard search (Gemini not available)...")
+                        status_text.text("⚠️ Running standard search (Gemini not available)...")
                         results = perform_ai_search(flight_request)
                     
                     st.session_state.search_results = results
@@ -649,9 +607,9 @@ if st.button("ðŸ¤– Start Gemini AI Search", type="primary", use_container_w
                     
                     # Show success message
                     if results.best_affiliate and results.savings > 0:
-                        st.success(f"ðŸŽ‰ AI found savings of ${results.savings:.0f}!")
+                        st.success(f"🎉 AI found savings of ${results.savings:.0f}!")
                     else:
-                        st.info("ðŸ“Š AI analysis complete - competitive pricing found")
+                        st.info("📊 AI analysis complete - competitive pricing found")
                     
                     st.markdown('</div>', unsafe_allow_html=True)
                     
@@ -659,20 +617,20 @@ if st.button("ðŸ¤– Start Gemini AI Search", type="primary", use_container_w
                     st.rerun()
                     
                 except Exception as e:
-                    st.error(f"âŒ Search failed: {str(e)}")
+                    st.error(f"❌ Search failed: {str(e)}")
                     st.session_state.is_searching = False
                     progress_bar.empty()
                     status_text.empty()
                     st.markdown('</div>', unsafe_allow_html=True)
                     
         except ValueError as e:
-            st.error(f"âŒ Invalid input: {str(e)}")
+            st.error(f"❌ Invalid input: {str(e)}")
     else:
-        st.error("âŒ Please select both origin and destination airports")
+        st.error("❌ Please select both origin and destination airports")
 
 # Add this helper section after the search button
 if st.session_state.is_searching:
-    st.info("ðŸ”„ Search in progress... Please wait for AI analysis to complete.")
+    st.info("🔄 Search in progress... Please wait for AI analysis to complete.")
     st.stop()  # Prevent rest of the app from rendering during search
 
 # Enhanced results display
@@ -682,26 +640,26 @@ if st.session_state.search_results:
     # Main results header with AI branding
     st.markdown("---")
     st.markdown('<div class="results-container">', unsafe_allow_html=True)
-    st.markdown("### ðŸ¤– Gemini AI Search Results")
+    st.markdown("### 🤖 Gemini AI Search Results")
     
     # AI insights summary at the top
-    if st.session_state.flight_agent.is_gemini_available():
+    if check_gemini_setup():
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.metric("ðŸ§  AI Confidence", "95%", help="Gemini AI confidence in recommendations")
+            st.metric("🧠 AI Confidence", "95%", help="Gemini AI confidence in recommendations")
         with col2:
-            st.metric("âš¡ Search Speed", f"{results.search_time:.1f}s", help="Total AI analysis time")
+            st.metric("⚡ Search Speed", f"{results.search_time:.1f}s", help="Total AI analysis time")
         with col3:
             if results.savings > 0:
-                st.metric("ðŸ’° AI Savings", f"${results.savings:.0f}", f"{results.savings_percentage:.1f}%")
+                st.metric("💰 AI Savings", f"${results.savings:.0f}", f"{results.savings_percentage:.1f}%")
             else:
-                st.metric("ðŸ“Š Price Status", "Competitive", help="Best available pricing found")
+                st.metric("📊 Price Status", "Competitive", help="Best available pricing found")
     
     # Main deal card
     if results.best_affiliate and results.savings > 0:
         st.markdown(f"""
         <div class="deal-card">
-            <h2 style="margin: 0; color: white;">ðŸŽ‰ Gemini AI Found You Savings!</h2>
+            <h2 style="margin: 0; color: white;">🎉 Gemini AI Found You Savings!</h2>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
                 <div>
                     <h3 style="margin: 0; color: white;">${results.best_affiliate.price:.0f}</h3>
@@ -718,15 +676,15 @@ if st.session_state.search_results:
         # Book now button
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            if st.button("âœˆï¸ Book This Deal Now", type="primary", use_container_width=True):
-                st.markdown(f"ðŸ”— [Click here to book with {results.best_affiliate.source}]({results.best_affiliate.booking_link})")
+            if st.button("✈️ Book This Deal Now", type="primary", use_container_width=True):
+                st.markdown(f"🔗 [Click here to book with {results.best_affiliate.source}]({results.best_affiliate.booking_link})")
                 st.balloons()
     
     else:
         # No savings found
         st.markdown(f"""
         <div class="competitive-card">
-            <h2 style="margin: 0; color: white;">ðŸ“Š Best Price Found</h2>
+            <h2 style="margin: 0; color: white;">📊 Best Price Found</h2>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
                 <div>
                     <h3 style="margin: 0; color: white;">${results.google_flights.price:.0f}</h3>
@@ -743,38 +701,38 @@ if st.session_state.search_results:
         # Book with Google button
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            if st.button("âœˆï¸ Book with Google Flights", type="primary", use_container_width=True):
-                st.markdown(f"ðŸ”— [Click here to book with Google Flights]({results.google_flights.booking_link})")
+            if st.button("✈️ Book with Google Flights", type="primary", use_container_width=True):
+                st.markdown(f"🔗 [Click here to book with Google Flights]({results.google_flights.booking_link})")
     
     # AI message display
-    st.markdown("### ðŸ’­ AI Analysis")
+    st.markdown("### 💭 AI Analysis")
     st.info(results.message)
     
     # AI Analysis Details
-    with st.expander("ðŸ§  Detailed Gemini AI Analysis", expanded=False):
+    with st.expander("🧠 Detailed Gemini AI Analysis", expanded=False):
         col1, col2 = st.columns(2)
         
         with col1:
             st.markdown("**AI Search Strategy:**")
-            if st.session_state.flight_agent.is_gemini_available():
-                st.write("âœ… Gemini route analysis enabled")
-                st.write("âœ… Partner optimization active")
-                st.write("âœ… Intelligent price prediction")
-                st.write("âœ… Real-time deal discovery")
+            if check_gemini_setup():
+                st.write("✅ Gemini route analysis enabled")
+                st.write("✅ Partner optimization active")
+                st.write("✅ Intelligent price prediction")
+                st.write("✅ Real-time deal discovery")
             else:
-                st.write("âš ï¸ Standard search mode")
-                st.write("ðŸ“ Add Gemini API key for AI features")
+                st.write("⚠️ Standard search mode")
+                st.write("🔧 Add Gemini API key for AI features")
         
         with col2:
             st.markdown("**Search Performance:**")
-            st.write(f"ðŸ• Total time: {results.search_time:.1f} seconds")
+            st.write(f"🕐 Total time: {results.search_time:.1f} seconds")
             affiliate_count = len([r for r in results.all_results if r.source != 'Google Flights'])
-            st.write(f"ðŸ” Partners searched: {affiliate_count}")
-            st.write(f"ðŸ“Š Results analyzed: {len(results.all_results)}")
-            st.write(f"ðŸŽ¯ AI Model: Gemini 1.5 Flash")
+            st.write(f"🔍 Partners searched: {affiliate_count}")
+            st.write(f"📊 Results analyzed: {len(results.all_results)}")
+            st.write(f"🎯 AI Model: Gemini 1.5 Flash")
     
     # Price comparison table
-    with st.expander("ðŸ“Š All Price Comparisons"):
+    with st.expander("📊 All Price Comparisons"):
         comparison_data = []
         for result in results.all_results:
             if result.success and result.price:
@@ -783,32 +741,11 @@ if st.session_state.search_results:
                     "Source": result.source,
                     "Price": f"${result.price:.0f}",
                     "Savings": f"${savings_vs_google:.0f}" if savings_vs_google > 0 else "-",
-                    "Status": "âœ… Best Deal" if result == results.best_affiliate else "ðŸ“Š Compared"
+                    "Status": "✅ Best Deal" if result == results.best_affiliate else "📊 Compared"
                 })
         
         if comparison_data:
             st.table(comparison_data)
-    
-    # Detailed search information
-    with st.expander("ðŸ“‹ Search Details"):
-        st.write(f"**Search Time:** {results.search_time:.1f} seconds")
-        st.write(f"**Timestamp:** {results.timestamp.strftime('%Y-%m-%d %H:%M:%S')}")
-        
-        if st.session_state.current_flight_request:
-            current_request = st.session_state.current_flight_request
-            st.write(f"**Trip Type:** {current_request.trip_type.value}")
-            st.write(f"**Cabin Class:** {current_request.cabin_class.value}")
-            st.write(f"**Origin:** {current_request.origin}")
-            st.write(f"**Destination:** {current_request.destination}")
-            st.write(f"**Passengers:** {current_request.passengers}")
-            if current_request.return_date:
-                st.write(f"**Return Date:** {current_request.return_date}")
-        
-        if results.best_affiliate:
-            st.write(f"**Best Deal Source:** {results.best_affiliate.source}")
-            if results.best_affiliate.flight_details:
-                ai_optimized = results.best_affiliate.flight_details.get("ai_optimized", False)
-                st.write(f"**AI Optimized:** {'âœ… Yes' if ai_optimized else 'âŒ No'}")
     
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -816,8 +753,8 @@ if st.session_state.search_results:
 st.divider()
 st.markdown("""
 <div style="text-align: center; color: #666; padding: 2rem;">
-    <p>ðŸ¤– Gemini AI Flight Agent - Real Artificial Intelligence</p>
-    <p>Powered by Google Gemini Pro â€¢ Advanced Neural Networks</p>
-    <p style="font-size: 0.9rem;">ðŸ§  Making decisions humans can't, finding deals algorithms miss</p>
+    <p>🤖 Gemini AI Flight Agent - Real Artificial Intelligence</p>
+    <p>Powered by Google Gemini Pro • Advanced Neural Networks</p>
+    <p style="font-size: 0.9rem;">🧠 Making decisions humans can't, finding deals algorithms miss</p>
 </div>
 """, unsafe_allow_html=True)
