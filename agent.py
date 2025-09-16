@@ -134,7 +134,7 @@ AFFILIATE_CONFIG = {
         "affiliate_id": settings.booking_affiliate_id,
         "base_url": "https://www.booking.com/flights",
         "commission_rate": 0.03,
-        "search_url_template": "https://www.booking.com/flights?from={origin}&to={destination}&fromDate={departure_date}&toDate={return_date}&adults={passengers}",
+        "search_url_template": "https://www.booking.com/flights/index.html?type={trip_type}&origin={origin}&destination={destination}&depart={departure_date}&return={return_date}&adults={passengers}&children=0&infants=0&cabinClass=ECONOMY&currency=USD",
         "enabled": True,
         "strengths": ["budget", "europe", "last_minute"]
     },
@@ -335,11 +335,121 @@ class GeminiFlightAgent:
                 "strategy": "fallback"
             }
     
+    def _build_booking_url(self, request: FlightRequest, config: Dict) -> str:
+        """Build proper Booking.com URL with correct parameters"""
+        base_url = "https://www.booking.com/flights/index.html"
+        
+        params = []
+        
+        # Trip type
+        if request.return_date and request.trip_type == TripType.ROUND_TRIP:
+            params.append("type=return")
+            params.append(f"return={request.return_date}")
+        else:
+            params.append("type=oneway")
+        
+        # Origin and destination
+        params.append(f"origin={request.origin}")
+        params.append(f"destination={request.destination}")
+        
+        # Dates
+        params.append(f"depart={request.departure_date}")
+        
+        # Passengers
+        params.append(f"adults={request.passengers}")
+        params.append("children=0")
+        params.append("infants=0")
+        
+        # Cabin class
+        cabin_mapping = {
+            CabinClass.ECONOMY: "ECONOMY",
+            CabinClass.PREMIUM_ECONOMY: "PREMIUM_ECONOMY", 
+            CabinClass.BUSINESS: "BUSINESS",
+            CabinClass.FIRST: "FIRST"
+        }
+        params.append(f"cabinClass={cabin_mapping.get(request.cabin_class, 'ECONOMY')}")
+        
+        # Currency and other settings
+        params.append("currency=USD")
+        params.append("locale=en-us")
+        
+        # Affiliate ID if available
+        if config.get('affiliate_id') and config['affiliate_id'] not in ["YOUR_BOOKING_AFFILIATE_ID", "demo_booking_id"]:
+            params.append(f"aid={config['affiliate_id']}")
+        
+        return f"{base_url}?{'&'.join(params)}"
+    
+    def _build_expedia_url(self, request: FlightRequest, config: Dict) -> str:
+        """Build Expedia URL with pre-filled search data"""
+        base_url = "https://www.expedia.com/Flights-Search"
+        
+        params = []
+        
+        # Trip type
+        if request.return_date and request.trip_type == TripType.ROUND_TRIP:
+            params.append("flight-type=on")
+            params.append(f"leg2={'from:' + request.destination + ',to:' + request.origin + ',departure:' + request.return_date + 'TANYT'}")
+        else:
+            params.append("flight-type=oneway")
+        
+        # Flight legs
+        params.append(f"leg1={'from:' + request.origin + ',to:' + request.destination + ',departure:' + request.departure_date + 'TANYT'}")
+        
+        # Passengers
+        params.append(f"passengers={'children:0,adults:' + str(request.passengers) + ',seniors:0,infantinlap:Y'}")
+        
+        # Other parameters
+        params.append("mode=search")
+        
+        # Affiliate ID
+        if config.get('affiliate_id') and config['affiliate_id'] != "demo_expedia_id":
+            params.append(f"_xpid={config['affiliate_id']}")
+        
+        return f"{base_url}?{'&'.join(params)}"
+    
+    def _build_kayak_url(self, request: FlightRequest, config: Dict) -> str:
+        """Build Kayak URL with pre-filled search data"""
+        base_url = "https://www.kayak.com/flights"
+        
+        params = []
+        params.append(f"from={request.origin}")
+        params.append(f"to={request.destination}")
+        params.append(f"depart={request.departure_date}")
+        
+        if request.return_date and request.trip_type == TripType.ROUND_TRIP:
+            params.append(f"return={request.return_date}")
+        
+        params.append(f"passengers={request.passengers}")
+        
+        # Cabin class
+        cabin_mapping = {
+            CabinClass.ECONOMY: "e",
+            CabinClass.PREMIUM_ECONOMY: "p", 
+            CabinClass.BUSINESS: "b",
+            CabinClass.FIRST: "f"
+        }
+        params.append(f"cabin={cabin_mapping.get(request.cabin_class, 'e')}")
+        
+        # Affiliate ID
+        if config.get('affiliate_id') and config['affiliate_id'] != "demo_kayak_id":
+            params.append(f"affiliate={config['affiliate_id']}")
+        
+        return f"{base_url}?{'&'.join(params)}"
+    
     def _build_search_url_for_partner(self, partner: str, request: FlightRequest, config: Dict) -> str:
-        """Build search URL for specific partner"""
+        """Build search URL for specific partner with specialized handlers"""
+        
+        # Use specialized URL builders for better accuracy
+        if partner == "booking":
+            return self._build_booking_url(request, config)
+        elif partner == "expedia":
+            return self._build_expedia_url(request, config)
+        elif partner == "kayak":
+            return self._build_kayak_url(request, config)
+        
+        # Generic template fallback for other partners
         template = config.get('search_url_template', config.get('base_url', ''))
         
-        # Format template with request parameters
         try:
             url = template.format(
                 origin=request.origin,
