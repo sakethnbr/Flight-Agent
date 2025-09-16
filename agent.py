@@ -308,13 +308,88 @@ class GeminiFlightAgent:
                 "strategy": "fallback"
             }
     
+    def _build_priceline_url(self, request: FlightRequest, config: Dict) -> str:
+        """Build Priceline URL using their actual format"""
+        # Priceline uses format: /m/fly/search/ORIGIN-DEST-YYYYMMDD/DEST-ORIGIN-YYYYMMDD/
+        
+        # Format dates to YYYYMMDD (remove dashes)
+        depart_formatted = request.departure_date.replace('-', '')
+        
+        if request.return_date and request.trip_type == TripType.ROUND_TRIP:
+            return_formatted = request.return_date.replace('-', '')
+            route_path = f"{request.origin}-{request.destination}-{depart_formatted}/{request.destination}-{request.origin}-{return_formatted}"
+        else:
+            route_path = f"{request.origin}-{request.destination}-{depart_formatted}"
+        
+        base_url = f"https://www.priceline.com/m/fly/search/{route_path}/"
+        
+        # Add query parameters
+        params = []
+        
+        # Cabin class mapping for Priceline
+        cabin_mapping = {
+            CabinClass.ECONOMY: "ECO",
+            CabinClass.PREMIUM_ECONOMY: "PEC", 
+            CabinClass.BUSINESS: "BUS",
+            CabinClass.FIRST: "FST"
+        }
+        params.append(f"cabin-class={cabin_mapping.get(request.cabin_class, 'ECO')}")
+        
+        # Other Priceline parameters
+        params.append("no-date-search=false")
+        params.append("search-type=0000")
+        params.append(f"num-adults={request.passengers}")
+        
+        if request.passengers > 1:
+            params.append("num-children=0")
+            params.append("num-seniors=0")
+        
+        return f"{base_url}?{'&'.join(params)}"
+    
+    def _build_kayak_url(self, request: FlightRequest, config: Dict) -> str:
+        """Build Kayak URL using their actual format"""
+        # Kayak uses format: /flights/ORIGIN-DEST/YYYY-MM-DD/YYYY-MM-DD
+        
+        if request.return_date and request.trip_type == TripType.ROUND_TRIP:
+            route_path = f"{request.origin}-{request.destination}/{request.departure_date}/{request.return_date}"
+        else:
+            route_path = f"{request.origin}-{request.destination}/{request.departure_date}"
+        
+        base_url = f"https://www.kayak.com/flights/{route_path}"
+        
+        # Add query parameters
+        params = []
+        
+        # Kayak uses specific parameter format
+        if request.passengers > 1:
+            params.append(f"adults={request.passengers}")
+        
+        # Cabin class for Kayak
+        cabin_mapping = {
+            CabinClass.ECONOMY: "e",
+            CabinClass.PREMIUM_ECONOMY: "p", 
+            CabinClass.BUSINESS: "b",
+            CabinClass.FIRST: "f"
+        }
+        cabin_class = cabin_mapping.get(request.cabin_class, 'e')
+        if cabin_class != 'e':  # Only add if not economy (default)
+            params.append(f"cabin={cabin_class}")
+        
+        # Add search context parameter (from your example)
+        params.append("ucs=tnsuds")
+        
+        # Sort by price
+        params.append("sort=price_a")
+        
+        return f"{base_url}?{'&'.join(params)}" if params else base_url
+    
     def _build_booking_url(self, request: FlightRequest, config: Dict) -> str:
-        """Build perfect Booking.com URL with full autofill"""
+        """Build Booking.com URL with full autofill"""
         base_url = "https://www.booking.com/flights/index.html"
         
         params = []
         
-        # Trip type - Booking.com uses specific values
+        # Trip type
         if request.return_date and request.trip_type == TripType.ROUND_TRIP:
             params.append("type=return")
             params.append(f"return={request.return_date}")
@@ -343,94 +418,6 @@ class GeminiFlightAgent:
         # Regional and currency settings
         params.append("currency=USD")
         params.append("locale=en-us")
-        params.append("lang=en-us")
-        
-        # Affiliate tracking (only if real affiliate ID)
-        if (config.get('affiliate_id') and 
-            config['affiliate_id'] not in ["YOUR_BOOKING_AFFILIATE_ID", "demo_booking_id"]):
-            params.append(f"aid={config['affiliate_id']}")
-        
-        return f"{base_url}?{'&'.join(params)}"
-    
-    def _build_kayak_url(self, request: FlightRequest, config: Dict) -> str:
-        """Build perfect Kayak URL with full autofill"""
-        base_url = "https://www.kayak.com/flights"
-        
-        params = []
-        
-        # Core search parameters
-        params.append(f"from={request.origin}")
-        params.append(f"to={request.destination}")
-        params.append(f"depart={request.departure_date}")
-        
-        # Return date for roundtrip
-        if request.return_date and request.trip_type == TripType.ROUND_TRIP:
-            params.append(f"return={request.return_date}")
-        
-        # Passenger count
-        params.append(f"passengers={request.passengers}")
-        
-        # Cabin class mapping for Kayak
-        cabin_mapping = {
-            CabinClass.ECONOMY: "e",
-            CabinClass.PREMIUM_ECONOMY: "p", 
-            CabinClass.BUSINESS: "b",
-            CabinClass.FIRST: "f"
-        }
-        params.append(f"cabin={cabin_mapping.get(request.cabin_class, 'e')}")
-        
-        # Additional Kayak-specific parameters
-        params.append("sort=price_a")  # Sort by price ascending
-        params.append("fs=cfc")        # Include major carriers
-        
-        # Affiliate tracking (only if real affiliate ID)
-        if (config.get('affiliate_id') and 
-            config['affiliate_id'] not in ["YOUR_KAYAK_AFFILIATE_ID", "demo_kayak_id"]):
-            params.append(f"affiliate={config['affiliate_id']}")
-        
-        return f"{base_url}?{'&'.join(params)}"
-    
-    def _build_priceline_url(self, request: FlightRequest, config: Dict) -> str:
-        """Build perfect Priceline URL with full autofill"""
-        base_url = "https://www.priceline.com/relax/at/flights/search"
-        
-        params = []
-        
-        # Trip type
-        if request.return_date and request.trip_type == TripType.ROUND_TRIP:
-            params.append("tripType=RT")
-            params.append(f"returnDate={request.return_date}")
-        else:
-            params.append("tripType=OW")
-        
-        # Core search parameters
-        params.append(f"fromAirport={request.origin}")
-        params.append(f"toAirport={request.destination}")
-        params.append(f"departDate={request.departure_date}")
-        
-        # Passenger details
-        params.append(f"adults={request.passengers}")
-        params.append("children=0")
-        params.append("seniors=0")
-        
-        # Cabin class mapping for Priceline
-        cabin_mapping = {
-            CabinClass.ECONOMY: "COACH",
-            CabinClass.PREMIUM_ECONOMY: "PREMIUM_COACH", 
-            CabinClass.BUSINESS: "BUSINESS",
-            CabinClass.FIRST: "FIRST"
-        }
-        params.append(f"cabinClass={cabin_mapping.get(request.cabin_class, 'COACH')}")
-        
-        # Priceline-specific parameters
-        params.append("searchType=F")   # Flight search
-        params.append("currency=USD")
-        params.append("locale=en_US")
-        
-        # Affiliate tracking (only if real affiliate ID)
-        if (config.get('affiliate_id') and 
-            config['affiliate_id'] not in ["YOUR_PRICELINE_AFFILIATE_ID", "demo_priceline_id"]):
-            params.append(f"refid={config['affiliate_id']}")
         
         return f"{base_url}?{'&'.join(params)}"
     
