@@ -67,21 +67,6 @@ The app includes:
 4. **Results**: View price comparison and savings
 5. **Book**: Click the booking link to secure your deal
 
-## 🌟 Why Streamlit?
-
-- **Fast Development**: Rapid prototyping and deployment
-- **Beautiful UI**: Built-in components with custom styling
-- **Easy Deployment**: Simple deployment to Streamlit Cloud
-- **Interactive**: Real-time updates and user interactions
-- **Responsive**: Works on all devices and screen sizes
-
-## 🚀 Deployment
-
-Deploy to Streamlit Cloud:
-1. Push your code to GitHub
-2. Connect your repository to Streamlit Cloud
-3. Deploy with one click
-
 ## 📄 License
 
 This project is open source and available under the MIT License.
